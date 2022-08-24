@@ -1,0 +1,284 @@
+//original code provided by Coding Shiksha
+
+#include<windows.h>
+#include <process.h>
+#include <stdio.h>
+#include <iostream>
+#include <conio.h>
+#include<time.h>
+#include <math.h>
+#include <stdlib.h>
+
+using namespace std;
+
+#define KEY_UP 0x50
+#define KEY_DOWN 0x48
+
+
+unsigned char ch;
+char map[22][80], cd = 221, player1d = 222;
+int dir, bx, by, player1, comp, turn; //integers for directions, players, turn, etc.
+
+
+void GabrielthreadA(void* data)
+{
+	ch = _getch();
+	turn++;
+}
+
+void dispmap() {
+	system("cls");
+	int i, j;
+	map[by][bx] = 254;
+	for (i = 0; i < 22; i++)
+	{
+		for (j = 0; j < 80; j++)
+		{
+			if (1 == j && (i == comp || i == comp + 1 || i == comp + 2 || i == comp + 3))
+			{
+				cout << cd;
+			}
+			else if (j == 78 && (i == player1 || i == player1 + 1 || i == player1 + 2 || i == player1 + 3))
+			{
+				cout << player1d;
+			}
+			else
+				cout << map[i][j];
+		}
+		cout << endl;
+	}
+	for (i = 0; i < 80; i++)
+	{
+		cout << "-";
+	}
+	map[by][bx] = 32;
+}
+
+void Player1move()
+{
+	turn = 0;
+	HANDLE GabrielhandleA;
+	GabrielhandleA = (HANDLE)_beginthread(&GabrielthreadA, 0, 0);
+	WaitForSingleObject(GabrielhandleA, 50);
+	if (turn == 1)
+	{
+		if (ch == 0xE0)
+		{
+			ch = _getch();
+			switch (ch) {
+			case KEY_UP:
+				if (player1 > 1) {
+					player1 -= 2;
+				}
+				break;
+			case KEY_DOWN:
+				if (player1 < 17) {
+					player1 += 2;
+				}
+				break;
+			}
+		}
+	}
+}
+
+void Compmove()
+{
+	if (bx <= 39) {
+		if (dir == 3)
+		{
+			if (by < comp)
+			{
+				comp -= 2;
+			}
+		}
+		else if (dir == 4)
+		{
+			if (by > comp + 3)
+			{
+				comp += 2;
+			}
+		}
+	}
+}
+
+void moveball()
+{
+	if (by == 0)
+	{
+		if (dir == 1)
+		{
+			bx++;
+			by++;
+			dir = 2;
+			goto end;
+		}
+		else if (dir == 3)
+		{
+			bx--;
+			by++;
+			dir = 4;
+			goto end;
+		}
+	}
+	else if (by == 21)
+	{
+		if (dir == 2)
+		{
+			bx++;
+			by--;
+			dir = 1;
+			goto end;
+
+		}
+		else if (dir == 4)
+		{
+			bx--;
+			by--;
+			dir = 3;
+			goto end;
+		}
+	}
+	if (dir == 1)
+	{
+		bx++;
+		by--;
+	}
+	else if (dir == 2)
+	{
+		bx++;
+		by++;
+	}
+	else if (dir == 3)
+	{
+		bx--;
+		by--;
+	}
+	else if (dir == 4)
+	{
+		bx--;
+		by++;
+	}
+end:
+	if (bx == 1)
+	{
+		if (by == comp || by == comp + 1 || by == comp + 2 || by == comp + 3)
+		{
+			bx += 2;
+			if (dir == 3)
+			{
+				dir = 1;
+			}
+			else if (dir == 4)
+			{
+				dir = 2;
+			}
+		}
+	}
+	else if (bx == 78)
+	{
+		if (by == player1 || by == player1 + 1 || by == player1 + 2 || by == player1 + 3)
+		{
+			bx -= 2;
+			if (dir == 1)
+			{
+				dir = 3;
+			}
+			else if (dir == 2)
+			{
+				dir = 4;
+			}
+		}
+	}
+}
+
+int checkwin()
+{
+	if (bx == 0)
+	{
+		return 1;
+	}
+	if (bx == 79)
+	{
+		return 2;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+int main()
+{
+	int i, j, w, x, compscore = 0, player1score = 0;
+
+	while (1)
+	{
+		srand(time_t(NULL));
+		x = (rand() % 4) + 1;
+		dir = x;
+		srand(time_t(NULL));
+		x = (rand() % 10) + 6;
+		by = x;
+		srand(time_t(NULL));
+		x = (rand() % 20) + 31;
+		bx = x;
+		player1 = 10;
+		comp = 10;
+		for (i = 0; i < 22; i++)
+		{
+			for (j = 0; j < 80; j++)
+			{
+				map[i][j] = 32;
+			}
+		}
+		dispmap();
+		_getch();
+		w = 0;
+		while (1)
+		{
+			Player1move();
+			Compmove();
+			moveball();
+			dispmap();
+			w = checkwin();
+			fflush(stdin);
+			if (w != 0)
+			{
+				fflush(stdin);
+				if (w == 1)
+				{
+					player1score++;
+				}
+				else if (w == 2)
+				{
+					compscore++;
+				}
+				goto out;
+
+			}
+		}
+	out:
+		_getch();
+		system("cls");
+		cout << "\t\t\t\t\t\t-----------SCORE-----------" << endl;
+		cout << "\n\n COMPUTER : " << compscore << endl;
+		cout << "\n\n PLAYER 1 : " << player1score << endl;
+		cin.get();
+		system("cls");
+		if (player1score == 4 || compscore == 4)
+		{
+			if (player1score == 4)
+			{
+				cout << endl << "\t\t\t\t\t\t -----PLAYER 1 WINS-----";
+			}
+			else
+			{
+				cout << endl << "\t\t\t\t\t\t -----COMPUTER WINS-----" << endl << endl;
+			}
+			break;
+		}
+		_getch();
+	}
+
+	system("pause>0");
+}
